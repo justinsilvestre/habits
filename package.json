@@ -1,0 +1,29 @@
+{
+  "name": "habits",
+  "version": "1.0.0",
+  "description": "An app for keeping track of your long-term goals and translating them into short-term tasks.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest src",
+    "flow": "flow",
+    "flow-typed": "flow-typed"
+  },
+  "repository": "https://github.com/justinsilvestre/habits.git",
+  "author": "justinsilvestre@gmail.com",
+  "license": "CC BY-NC-SA 4.0",
+  "private": true,
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
+    "flow-bin": "^0.70.0",
+    "jest": "^22.4.3",
+    "moment": "^2.22.1"
+  },
+  "dependencies": {
+    "babel-plugin-syntax-object-rest-spread": "^6.8.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "ramda": "^0.25.0",
+    "vorpal": "^1.12.0"
+  }
+}
