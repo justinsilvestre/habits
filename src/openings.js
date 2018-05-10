@@ -1,39 +1,38 @@
 // @flow
 import moment from 'moment'
-import { partition, maxBy, minBy, reduce, curry, prop, pipe, sortBy } from 'ramda'
+import { partition, maxBy, minBy, reduce, prop, pipe, sortBy } from 'ramda'
+import { NEVER } from './period'
 import type { Period } from './period'
 
 export type Opening = Period
-
-const NEVER = { start: Infinity, end: -Infinity }
 
 export const opening = (startArg: *, endArg: *): Opening => ({
   start: moment(startArg),
   end: moment(endArg),
 })
 
-export const isAdjacent = curry((opening1, opening2) =>
+export const isAdjacent = (opening1: Opening, opening2: Opening) =>
   opening1.end.isSame(opening2.start)
   || opening1.start.isSame(opening2.end)
-)
 
-const minStart = (openings) => reduce(minBy(prop('start')), NEVER, openings).start
-const maxEnd = (openings) => reduce(maxBy(prop('end')), NEVER, openings).end
+const minStart = openings => reduce(minBy(prop('start')), NEVER, openings).start
+const maxEnd = openings => reduce(maxBy(prop('end')), NEVER, openings).end
 export const consolidateOpenings : (Opening[]) => Opening[] = pipe(
-  reduce((combined, opening) => {
-    const [adjacent, nonAdjacent] = partition(isAdjacent(opening), combined)
+  reduce((combined, currentOpening) => {
+    const [adjacent, nonAdjacent] = partition(o => isAdjacent(currentOpening, o), combined)
 
     if (!adjacent.length) {
-      return [opening, ...combined]
+      return [currentOpening, ...combined]
     }
 
-    const adjacentWithOpening = [opening, ...adjacent]
+    const adjacentWithOpening = [currentOpening, ...adjacent]
     return [...nonAdjacent, {
       start: minStart(adjacentWithOpening),
       end: maxEnd(adjacentWithOpening),
     }]
   }, []),
-  sortBy(prop('start'))
+  sortBy(prop('start')),
 )
 
-export const getVolume = ({ start, end }: Opening): moment$MomentDuration => moment.duration(end.diff(start))
+export const getVolume = ({ start, end }: Opening): moment$MomentDuration =>
+  moment.duration(end.diff(start))

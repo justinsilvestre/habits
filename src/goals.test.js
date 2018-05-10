@@ -1,59 +1,43 @@
 // @flow
-import { makeSchedule, getFeasibility } from './goals'
 import moment, { duration } from 'moment'
+import { makeSchedule, getFeasibility } from './goals'
 import type { Goal } from './goals'
-import { opening } from './openings'
 import type { Opening } from './openings'
 
 const readTwoBookChapters : Goal = {
   name: 'Read two book chapters',
-  startDate: moment("2018-03-22"),
-  endDate: moment("2018-03-29"),
+  startDate: moment('2018-03-22'),
+  endDate: moment('2018-03-29'),
   volume: duration(2, 'hours'),
   chunking: {
     min: duration(30, 'minutes'),
     max: duration(60, 'minutes'),
   },
   interval: {
-    max: duration(90, 'minutes')
+    max: duration(90, 'minutes'),
   },
   priority: 1,
 }
 
 const workOutThreeTimesWeekly : Goal = {
   name: 'Work out 3 times a week',
-  startDate: moment("2018-03-22"),
-  endDate: moment("2018-03-29"),
+  startDate: moment('2018-03-22'),
+  endDate: moment('2018-03-29'),
   volume: duration(30, 'minutes'),
   chunking: {
     min: duration(10, 'minutes'),
     max: duration(10, 'minutes'),
   },
   interval: {
-    max: duration(12, 'hours')
+    max: duration(12, 'hours'),
   },
   priority: 2,
 }
 
-
-const weekdayWorkOutOpenings = [
-  opening({ h: 8, m: 30 }, { h: 9 }),
-  opening({ h: 18, m: 30 }, { h: 20 }),
-]
-const weekendWorkOutOpenings = [
-  opening({ h: 9 }, { h: 6 }),
-]
-
-const openingOn = (day: moment$Moment, startArg, endArg): Opening => {
-  const year = day.year()
-  const month = day.month()
-  const date = day.date()
-
-  return {
-    start: day.clone().set(startArg),
-    end: day.clone().set(endArg),
-  }
-}
+const openingOn = (day: moment$Moment, startArg, endArg): Opening => ({
+  start: day.clone().set(startArg),
+  end: day.clone().set(endArg),
+})
 
 describe('makeSchedule', () => {
   it('arranges goals into a schedule of non-overlapping activity chunks')
@@ -63,9 +47,8 @@ describe('getFeasibility', () => {
   it('returns 0 if there is no chance of finishing goals within schedule DUE TO VOLUME', () => {
     const thirtyMinuteGoal = { ...workOutThreeTimesWeekly, volume: duration(30, 'minutes') }
     const { startDate } = thirtyMinuteGoal
-    const goals = [thirtyMinuteGoal]
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 })
+      openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }])).toEqual(0)
@@ -77,11 +60,10 @@ describe('getFeasibility', () => {
       volume: duration(2, 'hours'),
       chunking: {
         min: duration(30, 'minutes'),
-        max: duration(90, 'minutes')
-      }
+        max: duration(90, 'minutes'),
+      },
     }
     const { startDate } = twoHourGoal
-    const goals = [twoHourGoal]
     const smallOpenings = [
       openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
       openingOn(startDate.clone().add(1, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
@@ -103,24 +85,21 @@ describe('getFeasibility', () => {
     }
 
     const { startDate } = thirtyMinuteGoalWithOneDayRest
-    const goals = [thirtyMinuteGoalWithOneDayRest]
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 })
+      openingOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoalWithOneDayRest, openings }])).toEqual(0)
-
   })
 
   it('returns 1 if goals fit within schedule with 3:4 goal-volume-to-openings ratio with wiggle factor of 4/3', () => {
     const thirtyMinuteGoal = { ...workOutThreeTimesWeekly, volume: duration(30, 'minutes') }
     const { startDate } = thirtyMinuteGoal
-    const goals = [thirtyMinuteGoal]
     const openings = [
       openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 45 }),
     ]
 
-    expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }], 4/3)).toEqual(1)
+    expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }], 4 / 3)).toEqual(1)
   })
 
   it('returns 1 if goals fit within schedule with 1:1 goal-volume-to-openings ratio', () => {
@@ -130,7 +109,6 @@ describe('getFeasibility', () => {
       interval: {},
     }
     const { startDate } = thirtyMinuteGoal
-    const goals = [thirtyMinuteGoal]
     const openings = [
       openingOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
     ]
@@ -139,9 +117,9 @@ describe('getFeasibility', () => {
   })
 
   // start with goal of highest priority, and distribute activity chunks among availabilities.
-  // should be early as possible, because early is generally safer and also since we want to maximize
-  // the leftover chunkage for the remaining goals, and don't want to leave unusuable slivers at either
-  // end of the opening.
+  // should be early as possible, because early is generally safer and also since we want to
+  // maximize the leftover chunkage for the remaining goals, and don't want to leave unusuable
+  // slivers at either end of the opening.
   describe('with multiple goals', () => {
     // goals volume total 2 hours and 30 minutes
     // free time 3 hours
@@ -160,7 +138,6 @@ describe('getFeasibility', () => {
         volume: duration(2, 'hours'),
         interval: {},
       }
-      const goals = [thirtyMinuteGoal, twoHourGoal]
       const threeHoursOpenings = [
         openingOn(startDate, { h: 8 }, { h: 8, m: 10 }),
         openingOn(startDate.clone().add(1, 'days'), { h: 8 }, { h: 8, m: 10 }),
@@ -172,7 +149,7 @@ describe('getFeasibility', () => {
 
       expect(getFeasibility([
         { goal: thirtyMinuteGoal, openings: threeHoursOpenings },
-        { goal: twoHourGoal, openings: threeHoursOpenings}
+        { goal: twoHourGoal, openings: threeHoursOpenings },
       ])).toEqual(0)
     })
 

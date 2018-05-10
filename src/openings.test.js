@@ -25,7 +25,7 @@ describe('consolidateOpenings', () => {
       opening({ h: 8 }, { h: 9 }),
     ]
     expect(consolidateOpenings(adjacentOpenings)).toEqual([
-      opening({ h: 7 }, { h: 9 })
+      opening({ h: 7 }, { h: 9 }),
     ])
   })
 
@@ -37,7 +37,7 @@ describe('consolidateOpenings', () => {
       opening({ h: 11 }, { h: 15, m: 30 }),
     ]
     expect(consolidateOpenings(adjacentOpenings)).toEqual([
-      opening({ h: 7 }, { h: 15, m: 30 })
+      opening({ h: 7 }, { h: 15, m: 30 }),
     ])
   })
 

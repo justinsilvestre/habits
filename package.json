@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest src",
     "flow": "flow",
-    "flow-typed": "flow-typed"
+    "flow-typed": "flow-typed",
+    "lint": "eslint src"
   },
   "repository": "https://github.com/justinsilvestre/habits.git",
   "author": "justinsilvestre@gmail.com",
@@ -14,15 +15,23 @@
   "private": true,
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-flow": "^6.23.0",
-    "flow-bin": "^0.70.0",
-    "jest": "^22.4.3",
-    "moment": "^2.22.1"
-  },
-  "dependencies": {
+    "babel-eslint": "^8.2.3",
     "babel-plugin-syntax-object-rest-spread": "^6.8.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-flowtype": "^2.46.3",
+    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.7.0",
+    "flow-bin": "^0.70.0",
+    "flow-typed": "^2.4.0",
+    "jest": "^22.4.3"
+  },
+  "dependencies": {
+    "moment": "^2.22.1",
     "ramda": "^0.25.0",
     "vorpal": "^1.12.0"
   }
