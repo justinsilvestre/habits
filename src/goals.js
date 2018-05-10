@@ -21,8 +21,18 @@ export type Goal = {|
   priority: number,
 |}
 
-export function makeSchedule(goalsAndOpenings: Array<{ goal: Goal, opening: Opening }>) {
+const DEFAULT_WIGGLE_FACTOR = 2
 
+const getPeriodDuration = ({ start, end }) => duration(end.diff(start))
+
+const maxChunkInOpening = (goal: Goal, opening: Opening): ?moment$MomentDuration => {
+  const openingDurationMinutes = getPeriodDuration(opening).asMinutes()
+  const { chunking } = goal
+
+  if (!openingDurationMinutes || openingDurationMinutes < chunking.min.asMinutes()) return null
+
+  const maxFittingChunkMinutes = Math.min(chunking.max.asMinutes(), openingDurationMinutes)
+  return duration(maxFittingChunkMinutes, 'minutes')
 }
 
 type ActivityChunk = Period
@@ -32,28 +42,51 @@ type Schedule = {
   openings: Array<Opening>,
 }
 
-// distributes activity blocks in free time for a given cycle
-const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): Schedule => {
-  const activityChunks = openings.reduce((chunks, opening) => chunks, [])
-
-  return {
-    activityChunks,
-    openings: [],
-  }
+const reduceOpeningFromStart = (activityChunk: moment$MomentDuration, opening: Opening): ?Opening => {
+  const { start, end } = opening
+  const newStart = start.clone().add(activityChunk)
+  return newStart.valueOf() >= end.valueOf()
+    ? null
+    : { start: newStart, end }
 }
 
-const DEFAULT_WIGGLE_FACTOR = 2
+// distributes activity blocks in free time for a given cycle
+// but how to make
+const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): Schedule => {
+  const result = openings.reduce(({ activitySum, schedule }, opening) => {
+    if (activitySum.asMinutes() >= goal.volume.asMinutes()) {
+      return { activitySum, schedule }
+    }
 
-const getOpeningDuration = ({ start, end }) => duration(end.diff(start))
+    const { activityChunks, openings: newOpenings } = schedule
+    const maxActivityChunkDuration = maxChunkInOpening(goal, opening)
+    if (maxActivityChunkDuration) {
+      activityChunks.push({
+        start: opening.start,
+        end: opening.end.clone().add(maxActivityChunkDuration),
+      })
+      activitySum.add(maxActivityChunkDuration)
+    }
+    const newOpening = maxActivityChunkDuration
+      ? reduceOpeningFromStart(maxActivityChunkDuration, opening)
+      : opening
+    if (newOpening) {
+      newOpenings.push(newOpening)
+    }
 
-const maxChunkInOpening = (goal: Goal, opening: Opening): ?moment$MomentDuration => {
-  const openingDurationMinutes = getOpeningDuration(opening).asMinutes()
-  const { chunking } = goal
+    return { activitySum, schedule }
+  }, {
+    activitySum: duration(0),
+    schedule: {
+      activityChunks: [],
+      openings: [],
+    },
+  })
+  return result.schedule
+}
 
-  if (!openingDurationMinutes || openingDurationMinutes < chunking.min.asMinutes()) return null
+export function makeSchedule(goalsAndOpenings: Array<{ goal: Goal, opening: Opening }>) {
 
-  const maxFittingChunkMinutes = Math.min(chunking.max.asMinutes(), openingDurationMinutes)
-  return duration(maxFittingChunkMinutes, 'minutes')
 }
 
 const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDuration> => {
@@ -66,7 +99,7 @@ const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDu
     : maxFittingChunk
 
   return [maxFittingChunk, ...maxChunksInOpening(goal, {
-    start: opening.start.add(nextOpeningOffset),
+    start: opening.start.clone().add(nextOpeningOffset),
     end: opening.end,
   })]
 }
