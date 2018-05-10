@@ -1,6 +1,6 @@
 // @flow
 import moment from 'moment'
-import { partition, maxBy, minBy, reduce, prop, pipe, sortBy } from 'ramda'
+import { partition, maxBy, minBy, reduce, prop, sortBy } from 'ramda'
 import { NEVER } from './period'
 import type { Period } from './period'
 
@@ -17,8 +17,8 @@ export const isAdjacent = (opening1: Opening, opening2: Opening) =>
 
 const minStart = openings => reduce(minBy(prop('start')), NEVER, openings).start
 const maxEnd = openings => reduce(maxBy(prop('end')), NEVER, openings).end
-export const consolidateOpenings : (Opening[]) => Opening[] = pipe(
-  reduce((combined, currentOpening) => {
+export const consolidateOpenings = (openings: Opening[]): Opening[] => {
+  const consolidated = openings.reduce((combined, currentOpening) => {
     const [adjacent, nonAdjacent] = partition(o => isAdjacent(currentOpening, o), combined)
 
     if (!adjacent.length) {
@@ -30,9 +30,10 @@ export const consolidateOpenings : (Opening[]) => Opening[] = pipe(
       start: minStart(adjacentWithOpening),
       end: maxEnd(adjacentWithOpening),
     }]
-  }, []),
-  sortBy(prop('start')),
-)
+  }, [])
+
+  return sortBy(prop('start'), consolidated)
+}
 
 export const getVolume = ({ start, end }: Opening): moment$MomentDuration =>
   moment.duration(end.diff(start))

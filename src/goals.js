@@ -33,24 +33,33 @@ type Schedule = {
 }
 
 // distributes activity blocks in free time for a given cycle
-const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): Schedule => ({
-  activityChunks: [],
-  openings: [],
-})
+const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): Schedule => {
+  const activityChunks = openings.reduce((chunks, opening) => chunks, [])
 
-//
+  return {
+    activityChunks,
+    openings: [],
+  }
+}
+
 const DEFAULT_WIGGLE_FACTOR = 2
 
 const getOpeningDuration = ({ start, end }) => duration(end.diff(start))
 
-const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDuration> => {
+const maxChunkInOpening = (goal: Goal, opening: Opening): ?moment$MomentDuration => {
   const openingDurationMinutes = getOpeningDuration(opening).asMinutes()
   const { chunking } = goal
 
-  if (!openingDurationMinutes || openingDurationMinutes < chunking.min.asMinutes()) return []
+  if (!openingDurationMinutes || openingDurationMinutes < chunking.min.asMinutes()) return null
 
   const maxFittingChunkMinutes = Math.min(chunking.max.asMinutes(), openingDurationMinutes)
-  const maxFittingChunk = duration(maxFittingChunkMinutes, 'minutes')
+  return duration(maxFittingChunkMinutes, 'minutes')
+}
+
+const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDuration> => {
+  const maxFittingChunk = maxChunkInOpening(goal, opening)
+  if (!maxFittingChunk) return []
+  //
   const minimumInterval = goal.interval.min
   const nextOpeningOffset: moment$MomentDuration = minimumInterval
     ? maxFittingChunk.clone().add(minimumInterval)
@@ -62,16 +71,13 @@ const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDu
   })]
 }
 
-const getMaxMinutesWithinOpenings = (goal: Goal, openings: Array<Opening>): number => {
-  const maxChunkMinutes = goal.chunking.max.asMinutes()
-
-  return openings.reduce((total, opening) => {
+const getMaxMinutesWithinOpenings = (goal: Goal, openings: Array<Opening>): number =>
+  openings.reduce((total, opening) => {
     const maxMinutesWithinOpening = maxChunksInOpening(goal, opening)
       .reduce((total2, dur) => total2 + dur.asMinutes(), 0)
 
     return total + maxMinutesWithinOpening
   }, 0)
-}
 
 const getSingleGoalFeasability = (
   goal: Goal,
