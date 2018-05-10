@@ -1,6 +1,6 @@
 // @flow
 import moment, { duration } from 'moment'
-import { makeSchedule, getFeasibility } from './goals'
+import getFeasibility from './getFeasibility'
 import type { Goal } from './goals'
 import type { Opening } from './openings'
 
