@@ -180,11 +180,11 @@ export const flattenPeriods = (...periodArrays: Period[][]): Period[] => {
 
         // now = lastPeriod.end
         now = nextPeriod.end
-        // const unfinishedPeriodUnderNext = all.find(p => now.isBetween(p.start, p.end))
-        const unfinishedPeriodUnderNext = reduce(
-          maxBy(p => p.rank),
-          all.filter(p => now.isBetween(p.start, p.end))
-        )
+        const unfinishedPeriodUnderNext = all.find(p => now.isBetween(p.start, p.end))
+        // const unfinishedPeriodUnderNext = reduce(
+        //   maxBy(p => p.rank),
+        //   all.filter(p => now.isBetween(p.start, p.end))
+        // )
         console.log('unfinishedPeriodUnderNext?', unfinishedPeriodUnderNext)
         if (unfinishedPeriodUnderNext) {
           console.log('still got some colors to fill!')
