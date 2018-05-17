@@ -1,6 +1,6 @@
 // @flow
 import { duration } from 'moment'
-import { getDuration as getPeriodDuration } from './period'
+import { getDuration as getPeriodDuration } from './periods'
 import type { Opening } from './openings'
 import type { Goal } from './goals'
 

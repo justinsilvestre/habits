@@ -1,54 +1,15 @@
 // @flow
-import moment, { duration } from 'moment'
+import { duration } from 'moment'
 import getFeasibility from './getFeasibility'
-import type { Goal } from './goals'
-import type { Opening } from './openings'
-
-const readTwoBookChapters : Goal = {
-  name: 'Read two book chapters',
-  startDate: moment('2018-03-22'),
-  endDate: moment('2018-03-29'),
-  volume: duration(2, 'hours'),
-  chunking: {
-    min: duration(30, 'minutes'),
-    max: duration(60, 'minutes'),
-  },
-  interval: {
-    max: duration(90, 'minutes'),
-  },
-  priority: 1,
-}
-
-const workOutThreeTimesWeekly : Goal = {
-  name: 'Work out 3 times a week',
-  startDate: moment('2018-03-22'),
-  endDate: moment('2018-03-29'),
-  volume: duration(30, 'minutes'),
-  chunking: {
-    min: duration(10, 'minutes'),
-    max: duration(10, 'minutes'),
-  },
-  interval: {
-    max: duration(12, 'hours'),
-  },
-  priority: 2,
-}
-
-const openingOn = (day: moment$Moment, startArg, endArg): Opening => ({
-  start: day.clone().set(startArg),
-  end: day.clone().set(endArg),
-})
-
-describe('makeSchedule', () => {
-  it('arranges goals into a schedule of non-overlapping activity chunks')
-})
+import { periodOn } from './periods'
+import { workOutThreeTimesWeekly, readTwoBookChapters } from '../test/fixtures'
 
 describe('getFeasibility', () => {
   it('returns 0 if there is no chance of finishing goals within schedule DUE TO VOLUME', () => {
     const thirtyMinuteGoal = { ...workOutThreeTimesWeekly, volume: duration(30, 'minutes') }
     const { startDate } = thirtyMinuteGoal
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }])).toEqual(0)
@@ -65,13 +26,13 @@ describe('getFeasibility', () => {
     }
     const { startDate } = twoHourGoal
     const smallOpenings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(1, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(2, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(3, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(4, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(5, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
-      openingOn(startDate.clone().add(6, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate, { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(1, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(2, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(3, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(4, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(5, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
+      periodOn(startDate.clone().add(6, 'days'), { h: 8, m: 0 }, { h: 8, m: 20 }),
     ]
 
     expect(getFeasibility([{ goal: twoHourGoal, openings: smallOpenings }])).toEqual(0)
@@ -86,7 +47,7 @@ describe('getFeasibility', () => {
 
     const { startDate } = thirtyMinuteGoalWithOneDayRest
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
+      periodOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoalWithOneDayRest, openings }])).toEqual(0)
@@ -96,7 +57,7 @@ describe('getFeasibility', () => {
     const thirtyMinuteGoal = { ...workOutThreeTimesWeekly, volume: duration(30, 'minutes') }
     const { startDate } = thirtyMinuteGoal
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 8, m: 45 }),
+      periodOn(startDate, { h: 8, m: 0 }, { h: 8, m: 45 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }], 4 / 3)).toEqual(1)
@@ -110,7 +71,7 @@ describe('getFeasibility', () => {
     }
     const { startDate } = thirtyMinuteGoal
     const openings = [
-      openingOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
+      periodOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
     ]
 
     expect(getFeasibility([{ goal: thirtyMinuteGoal, openings }])).toEqual(1)
@@ -139,12 +100,12 @@ describe('getFeasibility', () => {
         interval: {},
       }
       const threeHoursOpenings = [
-        openingOn(startDate, { h: 8 }, { h: 8, m: 10 }),
-        openingOn(startDate.clone().add(1, 'days'), { h: 8 }, { h: 8, m: 10 }),
-        openingOn(startDate.clone().add(2, 'days'), { h: 8 }, { h: 8, m: 10 }),
-        openingOn(startDate, { h: 9 }, { h: 9, m: 30 }),
-        openingOn(startDate.clone().add(1, 'days'), { h: 9 }, { h: 9, m: 30 }),
-        openingOn(startDate.clone().add(2, 'days'), { h: 9 }, { h: 9, m: 30 }),
+        periodOn(startDate, { h: 8 }, { h: 8, m: 10 }),
+        periodOn(startDate.clone().add(1, 'days'), { h: 8 }, { h: 8, m: 10 }),
+        periodOn(startDate.clone().add(2, 'days'), { h: 8 }, { h: 8, m: 10 }),
+        periodOn(startDate, { h: 9 }, { h: 9, m: 30 }),
+        periodOn(startDate.clone().add(1, 'days'), { h: 9 }, { h: 9, m: 30 }),
+        periodOn(startDate.clone().add(2, 'days'), { h: 9 }, { h: 9, m: 30 }),
       ]
 
       expect(getFeasibility([
