@@ -5,10 +5,9 @@ import type { Period } from './periods'
 
 const period = (start, end) => ({ start: moment(start), end: moment(end) })
 
-const format = ({ start, end, rank }: Period) =>
-// `[${rank}] ${start.format('H:mm')} - ${end.format('H:mm')}`
+const format = ({ start, end }: Period) =>
   `${start.format('H:mm')} - ${end.format('H:mm')}`
-// const format = v =>  v
+
 describe('flattenPeriods', () => {
   it('deletes overlap at end', () => {
     const openings = [
@@ -88,50 +87,48 @@ describe('flattenPeriods', () => {
     ].map(format))
   })
 
-  // it('flattens three arrays of periods', () => {
-  //   const openings = [
-  //     period({ h: 8 }, { h: 11 }),
-  //     period({ h: 12 }, { h: 15 }),
-  //     period({ h: 16 }, { h: 19 }),
-  //     period({ h: 20 }, { h: 24 }),
-  //   ]
-  //   const activityBlocks = [
-  //     period({ h: 8 }, { h: 9 }),
-  //     period({ h: 13 }, { h: 14 }),
-  //     period({ h: 18 }, { h: 19 }),
-  //     period({ h: 21 }, { h: 23 }),
-  //   ]
-  //
-  //   const activityBlocks2 = [
-  //     period({ h: 8, m: 30 }, { h: 9 }),
-  //     period({ h: 13 }, { h: 13, m: 30 }),
-  //     period({ h: 18 }, { h: 19 }),
-  //     period({ h: 21 }, { h: 23 }),
-  //   ]
-  //
-  //   const flattened = flattenPeriods(openings, activityBlocks, activityBlocks2)
-  //
-  //   expect((flattened).filter(p => p.rank === 1).map(format)).toEqual([
-  //     period({ h: 9 }, { h: 11 }),
-  //     period({ h: 12 }, { h: 13 }),
-  //     period({ h: 14 }, { h: 15 }),
-  //     period({ h: 16 }, { h: 18 }),
-  //     period({ h: 20 }, { h: 21 }),
-  //     period({ h: 23 }, { h: 24 }),
-  //   ].map(format))
-  //   expect((flattened).filter(p => p.rank === 2).map(format)).toEqual([
-  //     period({ h: 8 }, { h: 9 }),
-  //     period({ h: 13 }, { h: 14 }),
-  //     period({ h: 18 }, { h: 19 }),
-  //     period({ h: 21 }, { h: 23 }),
-  //   ].map(format))
-  //   expect((flattened).filter(p => p.rank === 3).map(format)).toEqual([
-  //     period({ h: 8 }, { h: 9 }),
-  //     period({ h: 13 }, { h: 14 }),
-  //     period({ h: 18 }, { h: 19 }),
-  //     period({ h: 21 }, { h: 23 }),
-  //   ].map(format))
-  // })
+  it('flattens three arrays of periods', () => {
+    const openings = [
+      period({ h: 8 }, { h: 11 }),
+      period({ h: 12 }, { h: 15 }),
+      period({ h: 16 }, { h: 19 }),
+      period({ h: 20 }, { h: 24 }),
+    ]
+    const activityBlocks = [
+      period({ h: 8 }, { h: 9 }),
+      period({ h: 13 }, { h: 14 }),
+      period({ h: 18 }, { h: 19 }),
+      period({ h: 21 }, { h: 23 }),
+    ]
+
+    const activityBlocks2 = [
+      period({ h: 8, m: 30 }, { h: 9 }),
+      period({ h: 13 }, { h: 13, m: 30 }),
+      period({ h: 18 }, { h: 19 }),
+      period({ h: 21 }, { h: 23 }),
+    ]
+
+    const flattened = flattenPeriods(openings, activityBlocks, activityBlocks2)
+
+    expect((flattened).filter(p => p.rank === 1).map(format)).toEqual([
+      period({ h: 9 }, { h: 11 }),
+      period({ h: 12 }, { h: 13 }),
+      period({ h: 14 }, { h: 15 }),
+      period({ h: 16 }, { h: 18 }),
+      period({ h: 20 }, { h: 21 }),
+      period({ h: 23 }, { h: 24 }),
+    ].map(format))
+    expect((flattened).filter(p => p.rank === 2).map(format)).toEqual([
+      period({ h: 8 }, { h: 8, m: 30 }),
+      period({ h: 13, m: 30 }, { h: 14 }),
+    ].map(format))
+    expect((flattened).filter(p => p.rank === 3).map(format)).toEqual([
+      period({ h: 8, m: 30 }, { h: 9 }),
+      period({ h: 13 }, { h: 13, m: 30 }),
+      period({ h: 18 }, { h: 19 }),
+      period({ h: 21 }, { h: 23 }),
+    ].map(format))
+  })
 
   it('flattens three arrays of periods', () => {
     const openings = [
@@ -165,6 +162,4 @@ describe('flattenPeriods', () => {
       ].map(format),
     })
   })
-
-
 })

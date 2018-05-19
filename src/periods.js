@@ -2,10 +2,10 @@
 import moment, { duration } from 'moment'
 import { last } from 'ramda'
 
-export type Period = {|
+export type Period = {
   start: moment$Moment,
   end: moment$Moment,
-|}
+}
 
 export const NEVER: Period = { // eslint-disable-line import/prefer-default-export
   start: moment(8640000000000000),
@@ -43,118 +43,47 @@ const ascendingByRank = ({ rank: a }, { rank: b }) => {
 }
 
 const ascendingByStartAndRank = (a, b) => ascendingByStart(a, b) || ascendingByRank(a, b)
-const descendingByEnd = ({ end: a }, { end: b }) => {
-  if (a.valueOf() > b.valueOf()) return -1
-  if (a.valueOf() < b.valueOf()) return 1
-  return 0
-}
 
-type Overlap =
-  | 'COMPLETE'
-  | 'MIDDLE'
-  | 'START'
-  | 'END'
-const getOverlap = (period1: Period, period2: Period): ?Overlap => {
-  if (period1.start.isAfter(period2.start) && period1.end.isBefore(period2.end)) return 'COMPLETE'
-  if (period2.start.isAfter(period1.start) && period2.end.isBefore(period1.end)) return 'MIDDLE'
-  if (period2.end.isBetween(period1.start, period1.end)) return 'START'
-  if (period2.start.isBetween(period1.start, period1.end)) return 'END'
-}
-
-const subtract = (period1: Period, period2: Period): Period[] => {
-  const overlap = getOverlap(period1, period2)
-  switch (overlap) {
-    case 'COMPLETE':
-      return []
-    case 'MIDDLE':
-      return [
-        { start: period1.start, end: period2.start },
-        { start: period2.end, end: period1.end },
-      ]
-    case 'START':
-      return [
-        { start: period2.end, end: period1.end },
-      ]
-    case 'END':
-      return [
-        { start: period1.start, end: period2.start },
-      ]
-    default:
-      return [period1]
-  }
-}
-
-const findFirstOverlap = (period1, period2) => {
-
-}
-
-const findFrom = (array, predicate, start = 0) => {
-  const result = []
-  let foundYet = false
-  for (let i = start; i++; i < array.length) {
-    const item = array[i]
-    if (predicate(item)) {
-      result.push(item)
-      foundYet = true
-    } else if (foundYet) {
-      break
-    }
-  }
-  return result
-}
-
-type RankedPeriod = { rank: number, start: moment$Moment, end?: moment$Moment }
+type RankedPeriod = { rank: number, start: moment$Moment, end: moment$Moment }
 const rankPeriod = (period: Period, rank: number): RankedPeriod => ({ ...period, rank })
 
-// https://softwareengineering.stackexchange.com/questions/241373/algorithm-for-flattening-overlapping-ranges
-
 const rankPeriods = (periodArrays: Period[][]): RankedPeriod[] =>
-  periodArrays.reduce((all, array, rankBase) =>
-    all.concat(array.map(p => rankPeriod(p, rankBase + 1))),
-  [])
-
-const findNext = (periodsByStartAndRank, from, active, result) => {
-  const lastActive = last(active)
-  if (!lastActive) {
-    return periodsByStartAndRank.find(p => p.start.isSame(from) || p.start.isAfter(from))
-  }
-
-  return periodsByStartAndRank.find((p) => {
-    return (p.start.isSame(from) || p.start.isAfter(from))
-      // && (p.start.isAfter(lastActive.end) || active.every(activePeriod => activePeriod.rank !== p.rank))
-      && (p.start.isAfter(lastActive.end) || p.rank !== last(result).rank)
-  })
-  || lastActive
-}
+  periodArrays.reduce(
+    (all, array, rankBase) =>
+      all.concat(array.map(p => rankPeriod(p, rankBase + 1))),
+    [],
+  )
 
 const isOnOrAfter = (a, b) => a.isSame(b) || a.isAfter(b)
 
-const getNextPendingPeriod = (periodsByStartAndRank, from) => {
-  return periodsByStartAndRank.find(p => isOnOrAfter(p.start, from))
-}
-const getNextDominantPendingPeriod = (periodsByStartAndRank, from, period) => {
-  // return periodsByStartAndRank.find(p => isOnOrAfter(p.start, from) && p.rank > period.rank)
-  return periodsByStartAndRank.find(p => p.start.isBetween(from, period.end, null, '[]') && p.rank > period.rank)
-}
+const getNextPendingPeriod = (
+  periodsByStartAndRank: RankedPeriod[],
+  from: moment$Moment,
+): ?RankedPeriod =>
+  periodsByStartAndRank.find(p => isOnOrAfter(p.start, from))
 
-const getNextUnderlyingPendingPeriod = (periodsByStartAndRank, from, lastPendingPeriod) => {
-  return periodsByStartAndRank.find(p => isOnOrAfter(p.start, from)
-    && p.rank < lastPendingPeriod.rank
-    && p.end.isAfter(lastPendingPeriod.end))
-}
+const getNextDominantPendingPeriod = (
+  periodsByStartAndRank: RankedPeriod[],
+  from: moment$Moment,
+  period: RankedPeriod,
+): ?RankedPeriod =>
+  periodsByStartAndRank.find(p => p.start.isBetween(from, period.end, null, '[]') && p.rank > period.rank)
 
-const getPartiallyOverlappedPeriodsAfter = (periodsByStartAndRank, from, overlapper) => {
-  return periodsByStartAndRank.filter(p => isOnOrAfter(p.start, from) && p.end.isAfter(overlapper.end) && p.rank < overlapper.rank)
-}
+const getPartiallyOverlappedPeriodsAfter = (
+  periodsByStartAndRank: RankedPeriod[],
+  from: moment$Moment,
+  overlapper: RankedPeriod,
+): RankedPeriod[] =>
+  periodsByStartAndRank.filter(p =>
+    isOnOrAfter(p.start, from) && p.end.isAfter(overlapper.end) && p.rank < overlapper.rank)
+
 const pushAll = (base, additions) => {
-  for (let i = 0; i < additions.length; i++) {
+  for (let i = 0; i < additions.length; i++) { // eslint-disable-line
     base.push(additions[i])
   }
 }
 
-const formatPeriod = p => `[${p.rank}] ${p.start.format('H:mm')} - ${p.end.format('H:mm')}`
-export const flattenPeriods = (...periodArrays: Period[][]): Period[] => {
-  let loops = 0
+export const flattenPeriods = (...periodArrays: Period[][]): RankedPeriod[] => {
   const result = []
 
   const ranked = rankPeriods(periodArrays)
@@ -162,11 +91,10 @@ export const flattenPeriods = (...periodArrays: Period[][]): Period[] => {
 
   const pendingPeriods = []
   let now = periodsByStartAndRank[0].start
+  if (!now) throw new Error('empty array of periods')
 
-  while (true) { // eslint-disable-line no-cond-assign
+  while (true) { // eslint-disable-line no-constant-condition
     const lastPendingPeriod = last(pendingPeriods)
-    console.log('pendingPeriods', pendingPeriods.map(formatPeriod))
-    console.log('now', now.format('H:mm'))
 
     if (!lastPendingPeriod) {
       const nextPendingPeriod = getNextPendingPeriod(periodsByStartAndRank, now)
@@ -181,49 +109,35 @@ export const flattenPeriods = (...periodArrays: Period[][]): Period[] => {
       result.push({ ...nextPendingPeriod })
       now = nextPendingPeriod.start
     } else {
-      const nextOverlappingPendingPeriod = getNextDominantPendingPeriod(periodsByStartAndRank, now, last(pendingPeriods))
-      // const nextPeriodOverlaps = nextOverlappingPendingPeriod && nextOverlappingPendingPeriod.start.isBetween(now, lastPendingPeriod, null, '[]')
-      if (nextOverlappingPendingPeriod) {
-        console.log('last pending periods rank', last(pendingPeriods).rank)
-        console.log('last results rank', last(result).rank)
-        console.log('nextOverlappingPendingPeriod', formatPeriod(nextOverlappingPendingPeriod))
-        last(result).end = nextOverlappingPendingPeriod.start
-        if (last(result).start.isSame(last(result).end)) result.pop()
-        // if ()
+      const nextOverlappingPendingPeriod =
+        getNextDominantPendingPeriod(periodsByStartAndRank, now, lastPendingPeriod)
+      const lastResult = last(result)
+      if (!lastResult) throw new Error('Empty results array')
 
+      if (nextOverlappingPendingPeriod) {
+        lastResult.end = nextOverlappingPendingPeriod.start
+        if (lastResult.start.isSame(lastResult.end)) result.pop()
         pendingPeriods.push(nextOverlappingPendingPeriod)
         result.push({ ...nextOverlappingPendingPeriod })
         now = nextOverlappingPendingPeriod.start
       } else {
-        const lastPendingPeriod = last(pendingPeriods)
-        console.log('no overlap, moving up:', formatPeriod(lastPendingPeriod))
-        // const shouldAdd = lastPendingPeriod.end.isAfter(now)
-        const shouldAdd = lastPendingPeriod.end.isAfter(last(result).end)
-        console.log(`end of ${formatPeriod(lastPendingPeriod)} after ${now.format('H:mm')}?`, shouldAdd)
+        const shouldAdd = lastPendingPeriod.end.isAfter(lastResult.end)
         if (shouldAdd) {
-          console.log(`lastPendingPeriod ends after ${now}, so adding`)
           result.push({
-            start: last(result).end, // maybe min between this and start of next??? idk alksdjfalsjdk
+            start: lastResult.end,
             end: lastPendingPeriod.end,
-            rank: lastPendingPeriod.rank
+            rank: lastPendingPeriod.rank,
           })
         }
-        now = lastPendingPeriod.end
         pendingPeriods.pop()
+        now = lastPendingPeriod.end
       }
     }
-
-
-    console.log('                  now', now.format('H:mm'))
-    console.log('                  pendingPeriods', pendingPeriods.map(formatPeriod))
-    console.log('                  result', result.map(formatPeriod))
-
-    loops++
-    // if (loops > 5) break
   }
 
   return result
 }
 
-export const deleteOverlap = (a, b) => flattenPeriods(a, b)
-  .filter(({ rank, start, end }) => rank === 1 && !start.isSame(end)).map(({ start, end }) => ({ start, end }))
+export const deleteOverlap = (a: Period[], b: Period[]): Period[] => flattenPeriods(a, b)
+  .filter(({ rank }) => rank === 1)
+  .map(({ start, end }) => ({ start, end }))
