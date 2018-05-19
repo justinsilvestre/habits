@@ -193,14 +193,15 @@ export const flattenPeriods = (...periodArrays: Period[][]): Period[] => {
 
         pendingPeriods.push(nextOverlappingPendingPeriod)
         result.push({ ...nextOverlappingPendingPeriod })
-        now = nextOverlappingPendingPeriod.end
+        now = nextOverlappingPendingPeriod.start
       } else {
         const lastPendingPeriod = last(pendingPeriods)
         console.log('no overlap, moving up:', formatPeriod(lastPendingPeriod))
-        const shouldAdd = lastPendingPeriod.end.isAfter(now)
+        // const shouldAdd = lastPendingPeriod.end.isAfter(now)
+        const shouldAdd = lastPendingPeriod.end.isAfter(last(result).end)
         console.log(`end of ${formatPeriod(lastPendingPeriod)} after ${now.format('H:mm')}?`, shouldAdd)
         if (shouldAdd) {
-          console.log('lastPendingPeriod ends after ${now}, so adding')
+          console.log(`lastPendingPeriod ends after ${now}, so adding`)
           result.push({
             start: last(result).end, // maybe min between this and start of next??? idk alksdjfalsjdk
             end: lastPendingPeriod.end,
