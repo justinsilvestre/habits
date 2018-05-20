@@ -75,8 +75,7 @@ const getPartiallyOverlappedPeriodsAfter = (
   overlapper: RankedPeriod,
 ): RankedPeriod[] =>
   periodsByStartAndRank.filter(p =>
-    isOnOrAfter(p.start, from) && p.end.isAfter(overlapper.end) && p.rank < overlapper.rank)
-
+    p.start.isBetween(overlapper.start, overlapper.end, null, '[]') && p.end.isAfter(overlapper.start) && p.rank < overlapper.rank)
 const pushAll = (base, additions) => {
   for (let i = 0; i < additions.length; i++) { // eslint-disable-line
     base.push(additions[i])

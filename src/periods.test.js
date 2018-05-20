@@ -3,7 +3,7 @@ import moment from 'moment'
 import { flattenPeriods } from './periods'
 import type { Period } from './periods'
 
-const period = (start, end) => ({ start: moment(start), end: moment(end) })
+const period = (start, end) => ({ start: moment(start), end: moment(end), toString })
 
 const TIME_FORMAT = 'H:mm'
 const format = ({ start, end }: Period) =>
@@ -21,6 +21,35 @@ const flattenPeriodsAndFormat = (...periodsArrays) =>
     }, {})
 
 describe('flattenPeriods', () => {
+  it('leaves alone no overlap', () => {
+    const under = [
+      {
+        start: moment('2018-01-04T08:00:00.000'),
+        end: moment('2018-01-04T08:10:00.000'),
+      },
+    ]
+    const over = [
+      {
+        start: moment('2018-01-01T08:00:00.000'),
+        end: moment('2018-01-01T08:10:00.000'),
+      },
+      {
+        start: moment('2018-01-02T08:00:00.000'),
+        end: moment('2018-01-02T08:10:00.000'),
+      },
+      {
+        start: moment('2018-01-03T08:00:00.000'),
+        end: moment('2018-01-03T08:10:00.000'),
+      },
+    ]
+
+    expect(flattenPeriods(under, over)).toEqual([
+      { ...over[0], rank: 2 },
+      { ...over[1], rank: 2 },
+      { ...over[2], rank: 2 },
+      { ...under[0], rank: 1 },
+    ])
+  })
   it('deletes overlap at end', () => {
     const under = [
       period({ h: 1 }, { h: 3 }),

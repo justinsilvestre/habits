@@ -1,4 +1,5 @@
 // @flow
+import type { Period } from './periods'
 
 type GoalChunking = {
   min: moment$MomentDuration,
@@ -17,4 +18,6 @@ export type Goal = {|
     max?: moment$MomentDuration,
   },
   priority: number,
+  openings: Array<Period>,
+  activityChunks: Array<Period>,
 |}

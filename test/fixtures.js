@@ -5,8 +5,8 @@ import type { Goal } from '../src/goals'
 export const readTwoBookChapters : Goal = {
   name: 'Read two book chapters',
   id: '1',
-  startDate: moment('2018-03-22'),
-  endDate: moment('2018-03-29'),
+  startDate: moment('2018-01-01'),
+  endDate: moment('2018-01-07'),
   volume: duration(2, 'hours'),
   chunking: {
     min: duration(30, 'minutes'),
@@ -16,13 +16,15 @@ export const readTwoBookChapters : Goal = {
     max: duration(90, 'minutes'),
   },
   priority: 1,
+  activityChunks: [],
+  openings: [],
 }
 
 export const workOutThreeTimesWeekly : Goal = {
   name: 'Work out 3 times a week',
   id: '2',
-  startDate: moment('2018-03-22'),
-  endDate: moment('2018-03-29'),
+  startDate: moment('2018-01-01'),
+  endDate: moment('2018-01-07'),
   volume: duration(30, 'minutes'),
   chunking: {
     min: duration(10, 'minutes'),
@@ -32,4 +34,6 @@ export const workOutThreeTimesWeekly : Goal = {
     max: duration(12, 'hours'),
   },
   priority: 2,
+  activityChunks: [],
+  openings: [],
 }
