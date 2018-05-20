@@ -7,6 +7,7 @@ type GoalChunking = {
 
 export type Goal = {|
   name: string,
+  id: string,
   startDate: moment$Moment,
   endDate: moment$Moment,
   volume: moment$MomentDuration,

@@ -1,8 +1,8 @@
 // @flow
 import moment from 'moment'
 import { partition, maxBy, minBy, reduce, prop, sortBy } from 'ramda'
-import { NEVER } from './period'
-import type { Period } from './period'
+import { NEVER } from './periods'
+import type { Period } from './periods'
 
 export type Opening = Period
 
