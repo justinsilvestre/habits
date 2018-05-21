@@ -59,8 +59,28 @@ const isOnOrAfter = (a, b) => a.isSame(b) || a.isAfter(b)
 const getNextPendingPeriod = (
   periodsByStartAndRank: RankedPeriod[],
   from: moment$Moment,
-): ?RankedPeriod =>
-  periodsByStartAndRank.find(p => isOnOrAfter(p.start, from))
+): ?RankedPeriod => {
+  let firstIndex
+  const first = periodsByStartAndRank.find((p, i) => {
+    firstIndex = i
+    return isOnOrAfter(p.start, from)
+  })
+
+  if (!first) return undefined
+
+  let latestFollowingPeriodOfSameRank
+
+  for (let i = firstIndex + 1; i < periodsByStartAndRank.length; i++) { // eslint-disable-line
+    const period = periodsByStartAndRank[i]
+    if (period.start.isSame(first.start)) {
+      latestFollowingPeriodOfSameRank = period
+    } else {
+      break
+    }
+  }
+
+  return latestFollowingPeriodOfSameRank || first
+}
 
 const getNextDominantPendingPeriod = (
   periodsByStartAndRank: RankedPeriod[],
@@ -115,7 +135,6 @@ export const flattenPeriods = (...periodArrays: Period[][]): RankedPeriod[] => {
 
       if (nextOverlappingPendingPeriod) {
         lastResult.end = nextOverlappingPendingPeriod.start
-        if (lastResult.start.isSame(lastResult.end)) result.pop()
         pendingPeriods.push(nextOverlappingPendingPeriod)
         result.push({ ...nextOverlappingPendingPeriod })
         now = nextOverlappingPendingPeriod.start
