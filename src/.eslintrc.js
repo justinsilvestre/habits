@@ -14,7 +14,8 @@ module.exports = {
       },
     }, {
       enforceForRenamedProperties: false
-    }]
+    }],
+    'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx'] }],
   },
   overrides: {
     files: ['*.test.js'],

@@ -2,17 +2,24 @@
   "name": "habits",
   "version": "1.0.0",
   "description": "An app for keeping track of your long-term goals and translating them into short-term tasks.",
-  "main": "index.js",
+  "main": "./node_modules/react-native-scripts/build/bin/crna-entry.js",
   "scripts": {
     "test": "jest src",
     "flow": "flow",
     "flow-typed": "flow-typed",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "start": "react-native-scripts start",
+    "eject": "react-native-scripts eject",
+    "android": "react-native-scripts android",
+    "ios": "react-native-scripts ios"
   },
   "repository": "https://github.com/justinsilvestre/habits.git",
   "author": "justinsilvestre@gmail.com",
   "license": "CC BY-NC-SA 4.0",
   "private": true,
+  "jest": {
+    "preset": "jest-expo"
+  },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-eslint": "^8.2.3",
@@ -28,10 +35,16 @@
     "eslint-plugin-react": "^7.7.0",
     "flow-bin": "^0.70.0",
     "flow-typed": "^2.4.0",
-    "jest": "^22.4.3"
+    "jest": "^22.4.3",
+    "jest-expo": "~27.0.0",
+    "react-native-scripts": "1.14.0",
+    "react-test-renderer": "16.3.1"
   },
   "dependencies": {
+    "expo": "^27.0.1",
     "moment": "^2.22.1",
-    "ramda": "^0.25.0"
+    "ramda": "^0.25.0",
+    "react": "^16.3.2",
+    "react-native": "~0.55.2"
   }
 }
