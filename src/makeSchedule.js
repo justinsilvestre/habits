@@ -19,30 +19,38 @@ export type Schedule = Array<SingleGoalSchedule>
 // distributes activity blocks in free time for a given cycle
 // seems maybe it makes sense to loop twice, in order to find a) possible schedule
 // and b) maxed-out 'schedule' for feasibility rating
-const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): SingleGoalSchedule => {
-  const result = openings.reduce((accumulator, opening) => {
+export const makeSingleGoalSchedule = (
+  goal: Goal,
+  openings: Opening[],
+): { schedule: SingleGoalSchedule, activitySum: moment$MomentDuration } => {
+  const { chunking, volume } = goal
+
+  return openings.reduce((accumulator, opening) => {
     const { activitySum, schedule } = accumulator
-    if (activitySum.asMilliseconds() >= goal.volume.asMilliseconds()) {
-      schedule.openings.push(opening)
+    const goalVolumeMet = activitySum.asMilliseconds() >= volume.asMilliseconds()
+    const activityChunksDestination = goalVolumeMet
+      ? accumulator.potentialExtraActivityChunks
+      : schedule.activityChunks
 
-      return accumulator
-    }
-
-    const { activityChunks, openings: newOpenings } = schedule
-    const maxActivityChunkDuration = maxChunkInOpening(goal, opening)
+    const maxActivityChunkDuration = maxChunkInOpening(chunking, opening)
     if (maxActivityChunkDuration) {
-      activityChunks.push({
+      activityChunksDestination.push({
         start: opening.start,
         end: opening.start.clone().add(maxActivityChunkDuration),
       })
-      activitySum.add(maxActivityChunkDuration)
     }
-    const newOpening = maxActivityChunkDuration
+    if (maxActivityChunkDuration) {
+      const activitySumDestination = goalVolumeMet
+        ? accumulator.potentialExtraActivitySum
+        : activitySum
+      activitySumDestination.add(maxActivityChunkDuration)
+    }
+    const newOpening = !goalVolumeMet && maxActivityChunkDuration
       ? reducePeriodFromStart(maxActivityChunkDuration, opening)
       : opening
 
     if (newOpening) {
-      newOpenings.push(newOpening)
+      schedule.openings.push(newOpening)
     }
 
     return accumulator
@@ -52,15 +60,9 @@ const makeSingleGoalSchedule = (goal: Goal, openings: Array<Opening>): SingleGoa
       activityChunks: [],
       openings: [],
     },
+    potentialExtraActivityChunks: [],
+    potentialExtraActivitySum: duration(0),
   })
-
-  const { activitySum, schedule } = result
-
-  if (activitySum.asMilliseconds() < goal.volume.asMilliseconds()) {
-    throw new Error(`Not enough time for goal "${goal.name}"`)
-  }
-
-  return schedule
 }
 
 const descendingByMaxChunk = ({ chunking: { max: a } }, { chunking: { max: b } }) => {
@@ -74,10 +76,16 @@ export default function makeSchedule(goals: Array<Goal>): { [string]: SingleGoal
     .sort(descendingByMaxChunk)
     .reduce((accumulator, goal) => {
       const { activityChunks } = accumulator
-      const singleGoal = makeSingleGoalSchedule(goal, deleteOverlap(goal.openings, activityChunks))
-      const { activityChunks: newActivityChunks } = singleGoal
+      const openingsAfterPriorActivity = deleteOverlap(goal.openings, activityChunks)
+      const { schedule, activitySum } = makeSingleGoalSchedule(goal, openingsAfterPriorActivity)
 
-      accumulator.schedule[goal.id] = singleGoal // eslint-disable-line no-param-reassign
+      if (activitySum.asMilliseconds() < goal.volume.asMilliseconds()) {
+        throw new Error(`Not enough time for goal "${goal.name}"`)
+      }
+
+      const { activityChunks: newActivityChunks } = schedule
+
+      accumulator.schedule[goal.id] = schedule // eslint-disable-line no-param-reassign
       newActivityChunks.forEach(ac => activityChunks.push(ac))
 
       return accumulator

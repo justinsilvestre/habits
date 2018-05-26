@@ -57,6 +57,19 @@ describe('makeSchedule', () => {
     expect(makeImpossibleSchedule).toThrow()
   })
 
+  it('throws an error if there is not enough time due to intervals', () => {
+    const openings = fortyMinutesOpenings
+    const wideMinimumIntervalsGoal = {
+      ...thirtyMinuteGoal,
+      openings,
+      interval: { min: duration({ days: 20 }) },
+    }
+    const makeImpossibleSchedule = () => {
+      makeSchedule([wideMinimumIntervalsGoal])
+    }
+    expect(makeImpossibleSchedule).toThrow()
+  })
+
   it('arranges one goal into a schedule of non-overlapping activity chunks', () => {
     const schedule = makeSchedule([{ ...thirtyMinuteGoal, openings: fortyMinutesOpenings }])
     expect(schedule).toEqual({

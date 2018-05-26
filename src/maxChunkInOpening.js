@@ -2,11 +2,10 @@
 import { duration } from 'moment'
 import { getDuration as getPeriodDuration } from './periods'
 import type { Opening } from './openings'
-import type { Goal } from './goals'
+import type { GoalChunking } from './goals'
 
-const maxChunkInOpening = (goal: Goal, opening: Opening): ?moment$MomentDuration => {
+const maxChunkInOpening = (chunking: GoalChunking, opening: Opening): ?moment$MomentDuration => {
   const openingDurationMinutes = getPeriodDuration(opening).asMinutes()
-  const { chunking } = goal
 
   if (!openingDurationMinutes || openingDurationMinutes < chunking.min.asMinutes()) return null
 

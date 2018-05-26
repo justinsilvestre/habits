@@ -1,7 +1,7 @@
 // @flow
 import type { Period } from './periods'
 
-type GoalChunking = {
+export type GoalChunking = {
   min: moment$MomentDuration,
   max: moment$MomentDuration,
 }

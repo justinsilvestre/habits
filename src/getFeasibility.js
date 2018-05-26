@@ -1,12 +1,13 @@
 // @flow
 import maxChunkInOpening from './maxChunkInOpening'
+import makeSchedule, { makeSingleGoalSchedule } from './makeSchedule'
 import type { Goal } from './goals'
 import type { Opening } from './openings'
 
 const DEFAULT_WIGGLE_FACTOR = 2
 
 const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDuration> => {
-  const maxFittingChunk = maxChunkInOpening(goal, opening)
+  const maxFittingChunk = maxChunkInOpening(goal.chunking, opening)
   if (!maxFittingChunk) return []
   //
   const minimumInterval = goal.interval.min
@@ -47,6 +48,10 @@ export default function getFeasibility(
   wiggleFactor: number = DEFAULT_WIGGLE_FACTOR,
 ): number {
   // return getSingleGoalFeasibility(goal, openings, wiggleFactor)
+  // const schedule = makeSchedule(goals)
+
+  // find the ratio of max mi
+
   return goals
     .map(goal => getSingleGoalFeasibility(goal, wiggleFactor))
     .reduce((a, b) => a + b, 0) / goals.length
