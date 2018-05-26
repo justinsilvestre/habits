@@ -30,11 +30,10 @@ const getMaxMinutesWithinOpenings = (goal: Goal, openings: Array<Opening>): numb
 
 const getSingleGoalFeasibility = (
   goal: Goal,
-  openings: Array<Opening>,
   wiggleFactor: number,
 ): number => {
   const goalVolume = goal.volume.asMinutes()
-  const maxMinutesWithinOpenings = getMaxMinutesWithinOpenings(goal, openings)
+  const maxMinutesWithinOpenings = getMaxMinutesWithinOpenings(goal, goal.openings)
   const availabilityRatio = maxMinutesWithinOpenings / goalVolume / wiggleFactor
 
   if (maxMinutesWithinOpenings < goalVolume) return 0
@@ -44,16 +43,13 @@ const getSingleGoalFeasibility = (
 
 
 export default function getFeasibility(
-  goalsAndOpenings: Array<{ goal: Goal, openings: Array<Opening> }>,
+  goals: Array<Goal>,
   wiggleFactor: number = DEFAULT_WIGGLE_FACTOR,
 ): number {
-  const [a] = goalsAndOpenings
-  const { goal, openings } = a
-
   // return getSingleGoalFeasibility(goal, openings, wiggleFactor)
-  return goalsAndOpenings
-    .map(({ goal, openings }) => getSingleGoalFeasibility(goal, openings, wiggleFactor))
-    .reduce((a, b) => a + b, 0) / goalsAndOpenings.length
+  return goals
+    .map(goal => getSingleGoalFeasibility(goal, wiggleFactor))
+    .reduce((a, b) => a + b, 0) / goals.length
   // return goalsAndOpenings.reduce((scheduleSoFar, { goal, openings }) =>
   //   getSingleGoalFeasibility(goal, fillOpenings(openings, scheduleSoFar), wiggleFactor), {})
 }
