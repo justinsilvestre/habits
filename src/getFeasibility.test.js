@@ -132,5 +132,7 @@ describe('getFeasibility', () => {
 
     // enough time for goals 1 and 3 but not goals 1 and 2
     it('returns 0') // but how do we express that maybe user would want to move goal 3 up in priority?
+
+    it('takes resting periods into account')
   })
 })
