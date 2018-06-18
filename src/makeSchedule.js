@@ -23,6 +23,26 @@ type SingleGoalScheduleResult = {
   potentialExtraActivitySum: moment$MomentDuration,
 }
 
+const getOpeningMinusRestingTime = (
+  schedule: SingleGoalSchedule,
+  goal: Goal,
+  opening: Opening,
+): ?Opening => {
+  const { interval } = goal
+  const lastChunkInResult = R.last(schedule.activityChunks)
+  const nextChunkEarliestStart = lastChunkInResult && interval.min
+    ? lastChunkInResult.end.add(interval.min)
+    : null
+  const openingMinusRestingTime = nextChunkEarliestStart
+    ? {
+      start: nextChunkEarliestStart.isAfter(opening.start) ? nextChunkEarliestStart : opening.start,
+      end: opening.end,
+    }
+    : opening
+  const openingIsValid = openingMinusRestingTime.start.isBefore(opening.end)
+  return openingIsValid ? openingMinusRestingTime : null
+}
+
 // distributes activity blocks in free time for a given cycle
 // seems maybe it makes sense to loop twice, in order to find a) possible schedule
 // and b) maxed-out 'schedule' for feasibility rating
@@ -30,7 +50,7 @@ export const makeSingleGoalSchedule = (
   goal: Goal,
   openings: Opening[],
 ): SingleGoalScheduleResult => {
-  const { chunking, volume, interval } = goal
+  const { chunking, volume } = goal
 
   return openings.reduce((accumulator, opening) => {
     const { activitySum, schedule } = accumulator
@@ -39,18 +59,8 @@ export const makeSingleGoalSchedule = (
       ? accumulator.potentialExtraActivityChunks
       : schedule.activityChunks
 
-    const lastChunkInResult = R.last(schedule.activityChunks)
-    const nextChunkMinStart = lastChunkInResult && interval.min
-      ? lastChunkInResult.end.add(interval.min)
-      : null
-    const openingMinusRestingTime = nextChunkMinStart
-      ? {
-        start: nextChunkMinStart.isAfter(opening.start) ? nextChunkMinStart : opening.start,
-        end: opening.end,
-      }
-      : opening
-    const openingIsValid = opening.start.isBefore(opening.end)
-    const maxActivityChunkDuration = openingIsValid
+    const openingMinusRestingTime = getOpeningMinusRestingTime(schedule, goal, opening)
+    const maxActivityChunkDuration = openingMinusRestingTime
       && maxChunkInOpening(chunking, openingMinusRestingTime)
     if (maxActivityChunkDuration) {
       activityChunksDestination.push({
@@ -94,7 +104,8 @@ export default function makeSchedule(goals: Array<Goal>): { [string]: SingleGoal
     .reduce((accumulator, goal) => {
       const { activityChunks } = accumulator
       const openingsAfterPriorActivity = deleteOverlap(goal.openings, activityChunks)
-      const { schedule, activitySum, potentialExtraActivitySum } = makeSingleGoalSchedule(goal, openingsAfterPriorActivity)
+      const { schedule, activitySum, potentialExtraActivitySum } =
+        makeSingleGoalSchedule(goal, openingsAfterPriorActivity)
       console.log(JSON.stringify(potentialExtraActivitySum))
       if (activitySum.asMilliseconds() < goal.volume.asMilliseconds()) {
         throw new Error(`Not enough time for goal "${goal.name}"`)
