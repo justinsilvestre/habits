@@ -1,12 +1,13 @@
 // @flow
 import type { Period } from './periods'
+import type { Schedule } from './schedules'
 
 export type GoalChunking = {
   min: moment$MomentDuration,
   max: moment$MomentDuration,
 }
 
-export type Goal = {|
+export type UnscheduledGoal = {
   name: string,
   id: string,
   startDate: moment$Moment,
@@ -19,5 +20,10 @@ export type Goal = {|
   },
   priority: number,
   openings: Array<Period>,
-  activityChunks: Array<Period>,
-|}
+}
+
+export type Goal = $Exact<UnscheduledGoal>
+
+export type ScheduledGoal = Goal & {
+  schedule: Schedule,
+}

@@ -2,36 +2,28 @@
 import { duration } from 'moment'
 import R from 'ramda'
 import { reducePeriodFromStart, deleteOverlap } from './periods'
-import maxChunkInOpening from './maxChunkInOpening'
+import maxChunksInOpening from './maxChunksInOpening'
 import type { Goal } from './goals'
 import type { Opening } from './openings'
 import type { Period } from './periods'
-
-export type ActivityChunk = Period
-
-export type SingleGoalSchedule = {|
-  activityChunks: Array<ActivityChunk>,
-  openings: Array<Opening>,
-|}
-
-export type Schedule = Array<SingleGoalSchedule>
+import type { Schedule } from './schedules'
 
 type SingleGoalScheduleResult = {
-  schedule: SingleGoalSchedule,
+  schedule: Schedule,
   activitySum: moment$MomentDuration,
-  potentialExtraActivityChunks: ActivityChunk[],
+  potentialExtraActivityChunks: Period[],
   potentialExtraActivitySum: moment$MomentDuration,
 }
 
 const getOpeningMinusRestingTime = (
-  schedule: SingleGoalSchedule,
+  schedule: Schedule,
   goal: Goal,
   opening: Opening,
 ): ?Opening => {
-  const { interval } = goal
+  const minimumInterval = goal.interval.min
   const lastChunkInResult = R.last(schedule.activityChunks)
-  const nextChunkEarliestStart = lastChunkInResult && interval.min
-    ? lastChunkInResult.end.add(interval.min)
+  const nextChunkEarliestStart = minimumInterval && lastChunkInResult
+    ? lastChunkInResult.end.clone().add(minimumInterval)
     : null
   const openingMinusRestingTime = nextChunkEarliestStart
     ? {
@@ -50,7 +42,7 @@ export const makeSingleGoalSchedule = (
   goal: Goal,
   openings: Opening[],
 ): SingleGoalScheduleResult => {
-  const { chunking, volume } = goal
+  const { volume } = goal
 
   return openings.reduce((accumulator, opening) => {
     const { activitySum, schedule } = accumulator
@@ -60,24 +52,28 @@ export const makeSingleGoalSchedule = (
       : schedule.activityChunks
 
     const openingMinusRestingTime = getOpeningMinusRestingTime(schedule, goal, opening)
-    const maxActivityChunkDuration = openingMinusRestingTime
-      && maxChunkInOpening(chunking, openingMinusRestingTime)
-    if (maxActivityChunkDuration) {
-      activityChunksDestination.push({
+    const maxActivityChunksDurations = openingMinusRestingTime
+      ? maxChunksInOpening(goal, openingMinusRestingTime)
+      : []
+
+    maxActivityChunksDurations.forEach((chunkDuration) => {
+      const newActivityChunk = {
         start: opening.start,
-        end: opening.start.clone().add(maxActivityChunkDuration),
-      })
+        end: opening.start.clone().add(chunkDuration),
+      }
+      activityChunksDestination.push(newActivityChunk)
+
       const activitySumDestination = goalVolumeMet
         ? accumulator.potentialExtraActivitySum
         : activitySum
-      activitySumDestination.add(maxActivityChunkDuration)
-    }
-    const newOpening = !goalVolumeMet && maxActivityChunkDuration
-      ? reducePeriodFromStart(maxActivityChunkDuration, opening)
-      : opening
-
-    if (newOpening) {
-      schedule.openings.push(newOpening)
+      activitySumDestination.add(chunkDuration)
+      const newOpening = goalVolumeMet ? opening : reducePeriodFromStart(chunkDuration, opening)
+      if (newOpening) {
+        schedule.openings.push(newOpening)
+      }
+    })
+    if (!maxActivityChunksDurations.length) {
+      schedule.openings.push(opening)
     }
 
     return accumulator
@@ -86,6 +82,8 @@ export const makeSingleGoalSchedule = (
     schedule: {
       activityChunks: [],
       openings: [],
+      potentialExtraActivityChunks: [],
+      potentialExtraActivitySum: duration(0),
     },
     potentialExtraActivityChunks: [],
     potentialExtraActivitySum: duration(0),
@@ -98,24 +96,19 @@ const descendingByMaxChunk = ({ chunking: { max: a } }, { chunking: { max: b } }
   return 0
 }
 
-export default function makeSchedule(goals: Array<Goal>): { [string]: SingleGoalSchedule } {
+export default function makeSchedule(goals: Array<Goal>): { [string]: Schedule } {
   const withIntermediaryOpenings = goals
     .sort(descendingByMaxChunk)
     .reduce((accumulator, goal) => {
       const { activityChunks } = accumulator
       const openingsAfterPriorActivity = deleteOverlap(goal.openings, activityChunks)
-      const { schedule, activitySum, potentialExtraActivitySum } =
+      const { schedule } =
         makeSingleGoalSchedule(goal, openingsAfterPriorActivity)
-      console.log(JSON.stringify(potentialExtraActivitySum))
-      if (activitySum.asMilliseconds() < goal.volume.asMilliseconds()) {
-        throw new Error(`Not enough time for goal "${goal.name}"`)
-      }
 
       const { activityChunks: newActivityChunks } = schedule
 
       accumulator.schedule[goal.id] = schedule // eslint-disable-line no-param-reassign
       newActivityChunks.forEach(ac => activityChunks.push(ac))
-
       return accumulator
     }, {
       activityChunks: [],
@@ -126,6 +119,7 @@ export default function makeSchedule(goals: Array<Goal>): { [string]: SingleGoal
   const schedule = R.map((singleGoalSchedule) => {
     singleGoalSchedule.openings = // eslint-disable-line no-param-reassign
       deleteOverlap(singleGoalSchedule.openings, withIntermediaryOpenings.activityChunks)
+
     return singleGoalSchedule
   }, withIntermediaryOpenings.schedule)
 

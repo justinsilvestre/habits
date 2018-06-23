@@ -1,60 +1,30 @@
 // @flow
-import maxChunkInOpening from './maxChunkInOpening'
-import makeSchedule, { makeSingleGoalSchedule } from './makeSchedule'
+import { duration } from 'moment'
+import makeSchedule from './makeSchedule'
 import type { Goal } from './goals'
 import type { Opening } from './openings'
+import type { Schedule } from './schedules'
 
 const DEFAULT_WIGGLE_FACTOR = 2
 
-const maxChunksInOpening = (goal: Goal, opening: Opening): Array<moment$MomentDuration> => {
-  const maxFittingChunk = maxChunkInOpening(goal.chunking, opening)
-  if (!maxFittingChunk) return []
-  //
-  const minimumInterval = goal.interval.min
-  const nextOpeningOffset: moment$MomentDuration = minimumInterval
-    ? maxFittingChunk.clone().add(minimumInterval)
-    : maxFittingChunk
+const sumVolume = (periods: Array<Opening>): moment$MomentDuration =>
+  periods.reduce((sum, { start, end }) => sum.add(end.clone().diff(start)), duration(0))
 
-  return [maxFittingChunk, ...maxChunksInOpening(goal, {
-    start: opening.start.clone().add(nextOpeningOffset),
-    end: opening.end,
-  })]
-}
-
-const getMaxMinutesWithinOpenings = (goal: Goal, openings: Array<Opening>): number =>
-  openings.reduce((total, opening) => {
-    const maxMinutesWithinOpening = maxChunksInOpening(goal, opening)
-      .reduce((total2, dur) => total2 + dur.asMinutes(), 0)
-
-    return total + maxMinutesWithinOpening
-  }, 0)
-
-const getSingleGoalFeasibility = (
-  goal: Goal,
-  wiggleFactor: number,
-): number => {
-  const goalVolume = goal.volume.asMinutes()
-  const maxMinutesWithinOpenings = getMaxMinutesWithinOpenings(goal, goal.openings)
-  const availabilityRatio = maxMinutesWithinOpenings / goalVolume / wiggleFactor
-
-  if (maxMinutesWithinOpenings < goalVolume) return 0
-
-  return availabilityRatio
-}
-
+const scheduledGoalsArray = (objs: { [string]: Schedule }): Array<Schedule> =>
+  Object.keys(objs).map(key => objs[key])
 
 export default function getFeasibility(
   goals: Array<Goal>,
   wiggleFactor: number = DEFAULT_WIGGLE_FACTOR,
 ): number {
-  // return getSingleGoalFeasibility(goal, openings, wiggleFactor)
-  // const schedule = makeSchedule(goals)
+  const scheduledGoals = makeSchedule(goals)
 
-  // find the ratio of max mi
+  const totalVolume = goals.reduce((sum, { volume }) => sum.add(volume), duration(0))
+  const maxMinutes = scheduledGoalsArray(scheduledGoals)
+    .reduce((sum, { activityChunks, potentialExtraActivitySum }) =>
+      sum.add(sumVolume(activityChunks)).add(potentialExtraActivitySum), duration(0))
+    .asMinutes()
 
-  return goals
-    .map(goal => getSingleGoalFeasibility(goal, wiggleFactor))
-    .reduce((a, b) => a + b, 0) / goals.length
-  // return goalsAndOpenings.reduce((scheduleSoFar, { goal, openings }) =>
-  //   getSingleGoalFeasibility(goal, fillOpenings(openings, scheduleSoFar), wiggleFactor), {})
+  const ratio = maxMinutes / totalVolume.asMinutes() / wiggleFactor
+  return maxMinutes < totalVolume.asMinutes() ? 0 : ratio
 }

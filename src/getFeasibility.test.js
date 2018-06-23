@@ -2,7 +2,7 @@
 import { duration } from 'moment'
 import getFeasibility from './getFeasibility'
 import { periodOn } from './periods'
-import { workOutThreeTimesWeekly, readTwoBookChapters } from '../test/fixtures'
+import { workOutThreeTimesWeekly, readTwoBookChapters, thirtyMinuteGoal, fortyMinutesOpenings } from '../test/fixtures'
 
 describe('getFeasibility', () => {
   it('returns 0 if there is no chance of finishing goals within schedule DUE TO VOLUME', () => {
@@ -10,14 +10,14 @@ describe('getFeasibility', () => {
     const openings = [
       periodOn(startDate, { h: 8, m: 0 }, { h: 8, m: 1 }),
     ]
-    const thirtyMinuteGoal = {
+    const goal = {
       ...workOutThreeTimesWeekly,
       volume: duration(30, 'minutes'),
       startDate,
       openings,
     }
 
-    expect(getFeasibility([thirtyMinuteGoal])).toEqual(0)
+    expect(getFeasibility([goal])).toEqual(0)
   })
 
   it('returns 0 if there is no chance of finishing goals within schedule DUE TO CHUNKING', () => {
@@ -66,22 +66,7 @@ describe('getFeasibility', () => {
     const openings = [
       periodOn(startDate, { h: 8, m: 0 }, { h: 8, m: 45 }),
     ]
-    const thirtyMinuteGoal = {
-      ...workOutThreeTimesWeekly,
-      volume: duration(30, 'minutes'),
-      startDate,
-      openings,
-    }
-
-    expect(getFeasibility([thirtyMinuteGoal], 4 / 3)).toEqual(1)
-  })
-
-  it('returns 1 if goals fit within schedule with 1:1 goal-volume-to-openings ratio', () => {
-    const { startDate } = workOutThreeTimesWeekly
-    const openings = [
-      periodOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
-    ]
-    const thirtyMinuteGoal = {
+    const goal = {
       ...workOutThreeTimesWeekly,
       volume: duration(30, 'minutes'),
       interval: {},
@@ -89,7 +74,23 @@ describe('getFeasibility', () => {
       openings,
     }
 
-    expect(getFeasibility([thirtyMinuteGoal])).toEqual(1)
+    expect(getFeasibility([goal], 4 / 3)).toEqual(1)
+  })
+
+  it('returns 1 if goals fit within schedule with 1:1 goal-volume-to-openings ratio', () => {
+    const { startDate } = workOutThreeTimesWeekly
+    const openings = [
+      periodOn(startDate, { h: 8, m: 0 }, { h: 9, m: 0 }),
+    ]
+    const goal = {
+      ...workOutThreeTimesWeekly,
+      volume: duration(30, 'minutes'),
+      interval: {},
+      startDate,
+      openings,
+    }
+
+    expect(getFeasibility([goal])).toEqual(1)
   })
 
   // start with goal of highest priority, and distribute activity chunks among availabilities.
@@ -111,14 +112,14 @@ describe('getFeasibility', () => {
         periodOn(startDate.clone().add(2, 'days'), { h: 9 }, { h: 9, m: 30 }),
       ]
 
-      const thirtyMinuteGoal = {
+      const goal1 = {
         ...workOutThreeTimesWeekly,
         startDate,
         endDate,
         volume: duration(30, 'minutes'),
         interval: {},
       }
-      const twoHourGoal = {
+      const goal2 = {
         ...readTwoBookChapters,
         startDate,
         endDate,
@@ -127,12 +128,29 @@ describe('getFeasibility', () => {
         openings: threeHoursOpenings,
       }
 
-      expect(getFeasibility([thirtyMinuteGoal, twoHourGoal])).toEqual(0)
+      expect(getFeasibility([goal1, goal2])).toEqual(0)
     })
 
     // enough time for goals 1 and 3 but not goals 1 and 2
     it('returns 0') // but how do we express that maybe user would want to move goal 3 up in priority?
 
     it('takes resting periods into account')
+
+    it('returns 0 if there is not enough time', () => {
+      const openings = fortyMinutesOpenings.slice(0, 1)
+
+      expect(getFeasibility([{ ...thirtyMinuteGoal, openings }])).toEqual(0)
+    })
+
+    it('returns 0 if there is not enough time due to intervals', () => {
+      const openings = fortyMinutesOpenings
+      const wideMinimumIntervalsGoal = {
+        ...thirtyMinuteGoal,
+        openings,
+        interval: { min: duration({ days: 20 }) },
+      }
+
+      expect(getFeasibility([wideMinimumIntervalsGoal])).toEqual(0)
+    })
   })
 })
