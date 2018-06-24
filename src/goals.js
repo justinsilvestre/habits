@@ -2,7 +2,7 @@
 import type { Period } from './periods'
 import type { Schedule } from './schedules'
 
-export type GoalChunking = {
+type GoalChunking = {
   min: moment$MomentDuration,
   max: moment$MomentDuration,
 }

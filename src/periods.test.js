@@ -149,4 +149,20 @@ describe('flattenPeriods', () => {
       ],
     })
   })
+
+  it('flattens multiple wholly covered periods', () => {
+    const under = [
+      period({ h: 8 }, { h: 11 }),
+      period({ h: 12 }, { h: 15 }),
+      period({ h: 16 }, { h: 19 }),
+      period({ h: 20 }, { h: 24 }),
+    ]
+    const over = [
+      period({ h: 8 }, { h: 24 }),
+    ]
+
+    expect(flattenPeriodsAndFormat(under, over)).toEqual({
+      '2': ['8:00 - 0:00'],
+    })
+  })
 })

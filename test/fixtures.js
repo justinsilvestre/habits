@@ -14,7 +14,7 @@ export const readTwoBookChapters : Goal = {
     max: duration(60, 'minutes'),
   },
   interval: {
-    max: duration(90, 'minutes'),
+    min: duration(90, 'minutes'),
   },
   priority: 1,
   openings: [],

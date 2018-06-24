@@ -1,6 +1,6 @@
 // @flow
 import moment, { duration } from 'moment'
-import { last } from 'ramda'
+import R from 'ramda'
 
 export type Period = {
   start: moment$Moment,
@@ -102,18 +102,18 @@ const pushAll = (base, additions) => {
   }
 }
 
+// infinite loop when invalid period is given!!!
 export const flattenPeriods = (...periodArrays: Period[][]): RankedPeriod[] => {
   const result = []
 
   const ranked = rankPeriods(periodArrays)
   const periodsByStartAndRank = ranked.sort(ascendingByStartAndRank)
-
   const pendingPeriods = []
+  if (!periodsByStartAndRank[0]) throw new Error('empty array of periods')
   let now = periodsByStartAndRank[0].start
-  if (!now) throw new Error('empty array of periods')
 
   while (true) { // eslint-disable-line no-constant-condition
-    const lastPendingPeriod = last(pendingPeriods)
+    const lastPendingPeriod = R.last(pendingPeriods)
 
     if (!lastPendingPeriod) {
       const nextPendingPeriod = getNextPendingPeriod(periodsByStartAndRank, now)
@@ -125,12 +125,13 @@ export const flattenPeriods = (...periodArrays: Period[][]): RankedPeriod[] => {
       pushAll(pendingPeriods, partiallyOverlappedPeriods)
 
       pendingPeriods.push(nextPendingPeriod)
+
       result.push({ ...nextPendingPeriod })
       now = nextPendingPeriod.start
     } else {
       const nextOverlappingPendingPeriod =
         getNextDominantPendingPeriod(periodsByStartAndRank, now, lastPendingPeriod)
-      const lastResult = last(result)
+      const lastResult = R.last(result)
       if (!lastResult) throw new Error('Empty results array')
 
       if (nextOverlappingPendingPeriod) {
@@ -148,7 +149,7 @@ export const flattenPeriods = (...periodArrays: Period[][]): RankedPeriod[] => {
           })
         }
         pendingPeriods.pop()
-        now = lastPendingPeriod.end
+        now = lastResult.end
       }
     }
   }
